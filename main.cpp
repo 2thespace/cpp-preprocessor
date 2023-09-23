@@ -26,7 +26,7 @@ bool Preprocess(const path& in_file, const path& out_file, const vector<path>& i
     static regex include_library(R"/(\s*#\s*include\s*<([^>]*)>\s*)/"); // #include <...> библиотека
     uint32_t number_lines = 0;
     ifstream input_file(in_file);
-    smatch m;
+    smatch match_path;
     if (!input_file)
     {
         return false;
@@ -36,31 +36,24 @@ bool Preprocess(const path& in_file, const path& out_file, const vector<path>& i
     while (getline(input_file, line))
     {
         number_lines++;
-
-
-        if (regex_match(line, m, include_file))
+        if (regex_match(line, match_path, include_file))
         {
             path parent_path = in_file.parent_path();
-            ifstream sub_file(parent_path / string(m[1]));
+            ifstream sub_file(parent_path / string(match_path[1]));
             if (sub_file)
             {
-                Preprocess(parent_path / string(m[1]), out_file, include_directories);
-
+                Preprocess(parent_path / string(match_path[1]), out_file, include_directories);
             }
             else
             {
-                if (!PreprocessVectorInclude(in_file, out_file, include_directories, number_lines, string(m[1])))
+                if (!PreprocessVectorInclude(in_file, out_file, include_directories, number_lines, string(match_path[1])))
                     return false;
-               
             }
         }
-        else if (regex_match(line, m, include_library))
+        else if (regex_match(line, match_path, include_library))
         {
-
-            if (!PreprocessVectorInclude(in_file, out_file, include_directories, number_lines, string(m[1])))
+            if (!PreprocessVectorInclude(in_file, out_file, include_directories, number_lines, string(match_path[1])))
                 return false;
-
-
         }
         else
         {
@@ -72,7 +65,6 @@ bool Preprocess(const path& in_file, const path& out_file, const vector<path>& i
 
 bool PreprocessVectorInclude(const path& in_file, const path& out_file, const vector<path>& include_directories, uint32_t number_lines, string file_name)
 {
-
     bool found = false;
     for (auto& include : include_directories)
     {
@@ -82,7 +74,6 @@ bool PreprocessVectorInclude(const path& in_file, const path& out_file, const ve
         found = true;
         Preprocess(include / file_name, out_file, include_directories);
         break;
-
     }
     if (!found)
     {
@@ -94,7 +85,6 @@ bool PreprocessVectorInclude(const path& in_file, const path& out_file, const ve
 
 string GetFileContents(string file) {
     ifstream stream(file);
-
     // конструируем string по двум итераторам
     return { (istreambuf_iterator<char>(stream)), istreambuf_iterator<char>() };
 }
